@@ -15,6 +15,7 @@ x-matching. Modulene:
 
 from choir_rehearsal.lyrics.extract import TextLine, group_lines, reconstruct_text
 from choir_rehearsal.lyrics.place import (
+    apply_lyrics_by_measure,
     apply_lyrics_to_part,
     apply_lyrics_to_score,
     is_singable,
@@ -29,6 +30,7 @@ __all__ = [
     "TextLine",
     "group_lines",
     "reconstruct_text",
+    "apply_lyrics_by_measure",
     "apply_lyrics_to_part",
     "apply_lyrics_to_score",
     "is_singable",
