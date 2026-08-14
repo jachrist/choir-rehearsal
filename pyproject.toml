@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "choir-rehearsal"
+version = "0.0.1"
+description = "OMR-pipeline: fra PDF-noter til korrekt MusicXML for korøving"
+readme = "README.md"
+requires-python = ">=3.11"
+# Lette kjerneavhengigheter. Tunge OMR-avhengigheter (homr, torch) legges til
+# i Fase 1 via extra-en [omr] slik at grunnoppsettet er raskt.
+dependencies = [
+    "pymupdf>=1.24",
+    "lxml>=5.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov>=5.0",
+    "ruff>=0.6",
+]
+# Fase 1: OMR-motor. Installeres separat pga. størrelse (torch m.m.).
+#   pip install -e ".[omr]"
+omr = [
+    # "homr",  # aktiveres i Fase 1
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+# src-layout: gjør pakken importerbar i tester uten editable-install
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-ra"
+markers = [
+    "slow: tester som krever tunge modeller (homr/vision); kjøres sjeldnere",
+]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
