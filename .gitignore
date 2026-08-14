@@ -27,3 +27,10 @@ output/
 *.jpg
 !testdata/**/*.png
 !testdata/**/*.jpg
+
+# Opphavsrettsbeskyttet notemateriale – lastes opp lokalt ved testing,
+# skal ikke committes til repoet. (Eksisterende filer i historikken fjernes
+# separat med en historikk-omskriving.)
+*.pdf
+*.musicxml
+*.mxl
