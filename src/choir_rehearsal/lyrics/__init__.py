@@ -13,7 +13,13 @@ x-matching. Modulene:
 - ``place``     – sett stavelser inn som <lyric> på syngbare noter
 """
 
-from choir_rehearsal.lyrics.extract import TextLine, group_lines, reconstruct_text
+from choir_rehearsal.lyrics.clean import clean_lyric_text
+from choir_rehearsal.lyrics.extract import (
+    TextLine,
+    group_lines,
+    parse_voice_label,
+    reconstruct_text,
+)
 from choir_rehearsal.lyrics.place import (
     apply_lyrics_by_measure,
     apply_lyrics_to_part,
@@ -29,7 +35,9 @@ __all__ = [
     "tokenize_line",
     "TextLine",
     "group_lines",
+    "parse_voice_label",
     "reconstruct_text",
+    "clean_lyric_text",
     "apply_lyrics_by_measure",
     "apply_lyrics_to_part",
     "apply_lyrics_to_score",

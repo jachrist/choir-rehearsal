@@ -16,10 +16,15 @@ steg – denne modulen gjør den geometriske grupperingen som uansett trengs.
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
 from statistics import median
 
 from choir_rehearsal.pdf.textlayer import TextSpan
+
+# Stemme-etikett i starten av en sangtekstlinje, f.eks. "S.", "A.T.", "2S.11".
+# Valgfrie ledende/etterfoelgende tall er takt-/systemnummer og forkastes.
+_VOICE_LABEL = re.compile(r"^\s*\d*\s*((?:[SATB]\.)+)\s*\d*\s*")
 
 
 @dataclass
@@ -39,6 +44,20 @@ class TextLine:
     @property
     def text(self) -> str:
         return reconstruct_text(self.spans)
+
+
+def parse_voice_label(text: str) -> tuple[list[str], str]:
+    """Skill ut stemme-etikett i starten av en linje.
+
+    ``"2S.11Enn om det"`` → (``["S"]``, ``"Enn om det"``);
+    ``"A.T. E-vig"`` → (``["A", "T"]``, ``"E-vig"``) – delt linje for alt og tenor.
+    Uten gjenkjent etikett: (``[]``, uendret tekst).
+    """
+    m = _VOICE_LABEL.match(text)
+    if not m:
+        return [], text.strip()
+    letters = [c for c in m.group(1) if c in "SATB"]
+    return letters, text[m.end():].strip()
 
 
 def _height(span: TextSpan) -> float:

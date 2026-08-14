@@ -2,8 +2,32 @@
 
 from __future__ import annotations
 
-from choir_rehearsal.lyrics import group_lines, reconstruct_text
+from choir_rehearsal.lyrics import group_lines, parse_voice_label, reconstruct_text
 from choir_rehearsal.pdf.textlayer import TextSpan
+
+
+def test_parse_voice_label_single():
+    voices, rest = parse_voice_label("S.Enn om det")
+    assert voices == ["S"]
+    assert rest == "Enn om det"
+
+
+def test_parse_voice_label_with_measure_numbers():
+    voices, rest = parse_voice_label("2S.11Enn om det")
+    assert voices == ["S"]
+    assert rest == "Enn om det"
+
+
+def test_parse_voice_label_shared_alto_tenor():
+    voices, rest = parse_voice_label("A.T. E-vig opp-fin-ner")
+    assert voices == ["A", "T"]
+    assert rest == "E-vig opp-fin-ner"
+
+
+def test_parse_voice_label_none():
+    voices, rest = parse_voice_label("bare vanlig tekst")
+    assert voices == []
+    assert rest == "bare vanlig tekst"
 
 
 def span(text, x0, y0, w=10.0, h=10.0) -> TextSpan:
