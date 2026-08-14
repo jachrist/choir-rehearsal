@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="no">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Sangtekstretting – choir-rehearsal</title>
+  <style>
+    :root { --bg:#f7f7f8; --panel:#fff; --line:#e2e2e5; --accent:#2d6cdf; --muted:#666; }
+    * { box-sizing: border-box; }
+    body { margin:0; font-family: system-ui, sans-serif; background:var(--bg); color:#1a1a1a; }
+    header { background:var(--panel); border-bottom:1px solid var(--line); padding:10px 16px;
+             display:flex; gap:10px; align-items:center; flex-wrap:wrap; position:sticky; top:0; z-index:5; }
+    header h1 { font-size:15px; margin:0 12px 0 0; }
+    input[type=text] { padding:6px 8px; border:1px solid var(--line); border-radius:6px; min-width:min(46ch,60vw); }
+    button { padding:6px 10px; border:1px solid var(--line); background:#fff; border-radius:6px; cursor:pointer; }
+    button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+    button:hover { filter:brightness(0.97); }
+    .layout { display:flex; gap:0; align-items:stretch; }
+    #voices { width:340px; min-width:300px; border-right:1px solid var(--line); background:var(--panel);
+              padding:12px; overflow:auto; height:calc(100vh - 52px); }
+    #score { flex:1; overflow:auto; height:calc(100vh - 52px); padding:12px; }
+    #score svg { max-width:100%; height:auto; display:block; margin-bottom:12px; }
+    .voice { border:1px solid var(--line); border-radius:8px; padding:10px; margin-bottom:12px; }
+    .voice h3 { margin:0 0 6px; font-size:14px; }
+    .voice .meta { color:var(--muted); font-size:12px; margin-bottom:8px; }
+    .row { display:flex; gap:6px; align-items:center; margin-bottom:6px; flex-wrap:wrap; }
+    textarea { width:100%; min-height:54px; border:1px solid var(--line); border-radius:6px; padding:6px; font:inherit; }
+    .hint { color:var(--muted); font-size:12px; }
+    .status { color:var(--muted); font-size:12px; margin-left:auto; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎼 Sangtekstretting</h1>
+    <input id="path" type="text" placeholder="sti til .musicxml (rettet i MuseScore)" />
+    <button class="primary" onclick="load()">Last inn</button>
+    <button onclick="location.href='/api/export'">Eksporter</button>
+    <span class="status" id="status"></span>
+  </header>
+  <div class="layout">
+    <aside id="voices"><p class="hint">Last inn en MusicXML-fil for å begynne.</p></aside>
+    <main id="score"></main>
+  </div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+function setStatus(t){ $("status").textContent = t; }
+
+async function api(url, opts){
+  const r = await fetch(url, opts);
+  if(!r.ok){ const e = await r.json().catch(()=>({detail:r.statusText})); throw new Error(e.detail||r.statusText); }
+  return r;
+}
+
+async function load(){
+  const path = $("path").value.trim();
+  if(!path){ setStatus("Skriv inn en filsti."); return; }
+  try{
+    setStatus("Laster …");
+    const data = await (await api("/api/load",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({path})})).json();
+    renderVoices(data.voices);
+    await refreshScore();
+    setStatus("Lastet: " + data.loaded);
+  }catch(e){ setStatus("Feil: " + e.message); }
+}
+
+function renderVoices(voices){
+  const el = $("voices"); el.innerHTML = "";
+  voices.forEach(v => {
+    const div = document.createElement("div");
+    div.className = "voice";
+    div.innerHTML = `
+      <h3>${v.name} <span class="hint">(${v.part_id})</span></h3>
+      <div class="meta">${v.lyric_count}/${v.singable_notes} noter har tekst</div>
+      <div class="row">
+        <button onclick="shift('${v.part_id}',-1)">◀ Forskyv −1</button>
+        <button onclick="shift('${v.part_id}',1)">Forskyv +1 ▶</button>
+        <button onclick="clearVoice('${v.part_id}')">Tøm</button>
+      </div>
+      <textarea id="txt-${v.part_id}" placeholder="Sangtekst (stavelser delt med bindestrek: glo-ri-a)">${v.syllables.filter(Boolean).join(" ")}</textarea>
+      <div class="row">
+        <button onclick="setText('${v.part_id}')">Bruk tekst</button>
+        <span class="hint">Bindestrek = stavelse; melisme håndteres via legatobuer.</span>
+      </div>`;
+    el.appendChild(div);
+  });
+}
+
+async function afterEdit(promise){
+  try{ const data = await (await promise).json(); renderVoices(data.voices); await refreshScore(); }
+  catch(e){ setStatus("Feil: " + e.message); }
+}
+function edit(body){ return api("/api/edit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)}); }
+function shift(part_id,offset){ afterEdit(edit({op:"shift",part_id,offset})); }
+function clearVoice(part_id){ afterEdit(edit({op:"clear",part_id})); }
+function setText(part_id){ afterEdit(edit({op:"set_text",part_id,text:$("txt-"+part_id).value})); }
+
+async function refreshScore(){
+  const svg = await (await api("/api/svg")).text();
+  $("score").innerHTML = svg;
+}
+
+// Auto-vis en fil som allerede er forhåndslastet på serveren (choir-omr ui <fil>).
+window.addEventListener("DOMContentLoaded", async () => {
+  try{
+    const data = await (await api("/api/state")).json();
+    if(data.voices && data.voices.length){
+      renderVoices(data.voices);
+      await refreshScore();
+      setStatus("Forhåndslastet partitur");
+    }
+  }catch(e){ /* ingen fil lastet ennå – normalt */ }
+});
+</script>
+</body>
+</html>

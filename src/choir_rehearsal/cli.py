@@ -104,7 +104,28 @@ def build_parser() -> argparse.ArgumentParser:
         help="Kommaseparerte 0-indekserte sider å slå sammen (må ha lik struktur)",
     )
     p2.set_defaults(func=_cmd_fase2)
+
+    pu = sub.add_parser("ui", help="Start lokalt web-verktøy for sangtekstretting (Fase 4)")
+    pu.add_argument("musicxml", nargs="?", default=None, help="Valgfri MusicXML å laste inn")
+    pu.add_argument("--host", default="127.0.0.1")
+    pu.add_argument("--port", type=int, default=8000)
+    pu.set_defaults(func=_cmd_ui)
     return parser
+
+
+def _cmd_ui(args: argparse.Namespace) -> int:
+    try:
+        from choir_rehearsal.ui.server import serve
+    except ImportError:
+        print(
+            "Web-verktøyet krever ekstra avhengigheter. Installer med: "
+            "pip install -e '.[ui]'",
+            file=sys.stderr,
+        )
+        return 3
+    print(f"Åpne http://{args.host}:{args.port} i nettleseren (Ctrl+C for å avslutte)")
+    serve(args.musicxml, host=args.host, port=args.port)
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
