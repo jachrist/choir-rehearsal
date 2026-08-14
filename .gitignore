@@ -1,0 +1,29 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# Verktøy
+.ruff_cache/
+
+# OS / editor
+.DS_Store
+*.swp
+
+# Genererte pipeline-utdata (holdes utenfor git)
+output/
+*.png
+*.jpg
+!testdata/**/*.png
+!testdata/**/*.jpg
