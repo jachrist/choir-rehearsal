@@ -32,11 +32,11 @@ omr = [
     "homr>=0.7",
 ]
 # Fase 4: lokalt web-verktøy for sangtekstretting.
+# (Verovio lager SVG som nettleseren viser direkte – ingen cairosvg/Cairo nødvendig.)
 ui = [
     "fastapi>=0.110",
     "uvicorn>=0.29",
     "verovio>=4.0",
-    "cairosvg>=2.7",
 ]
 
 [tool.setuptools.packages.find]
