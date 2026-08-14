@@ -4,18 +4,33 @@ Forgrening (avklart forutsetning): innkjøpte PDF-er med tekstlag gir eksakt tek
 med posisjon via ``choir_rehearsal.pdf.textlayer`` (ingen OCR nødvendig). Skannede
 sider må gå via OCR/vision.
 
-Anbefalt tilnærming: hybrid. Bounding-box per stavelse (fra tekstlag eller OCR) gir
-deterministisk posisjon; en vision-modell gjør den vanskelige koblingen
-stavelse→note og håndterer bindestrek-deling og elisjon. Divisi (to stemmer på én
-stav) kompliserer koblingen og trenger egne testtilfeller.
+homr sin MusicXML har ikke x-koordinater per note, så koblingen stavelse→note gjøres
+sekvensielt (stavelse k → k-te syngbare note) innenfor hver stemme, ikke ved
+x-matching. Modulene:
+
+- ``syllables`` – del tekst i stavelser (syllabic begin/middle/end/single)
+- ``extract``   – grupper tekst-spans til ordnede linjer
+- ``place``     – sett stavelser inn som <lyric> på syngbare noter
 """
 
-from __future__ import annotations
+from choir_rehearsal.lyrics.extract import TextLine, group_lines, reconstruct_text
+from choir_rehearsal.lyrics.place import (
+    apply_lyrics_to_part,
+    apply_lyrics_to_score,
+    is_singable,
+    singable_notes,
+)
+from choir_rehearsal.lyrics.syllables import Syllable, syllabify_word, tokenize_line
 
-
-def place_lyrics():  # pragma: no cover - Fase 3
-    """Koble stavelser til noter og sette dem inn i <lyric>-elementer.
-
-    Ikke implementert ennå – legges til i Fase 3.
-    """
-    raise NotImplementedError("Sangtekst-plassering implementeres i Fase 3.")
+__all__ = [
+    "Syllable",
+    "syllabify_word",
+    "tokenize_line",
+    "TextLine",
+    "group_lines",
+    "reconstruct_text",
+    "apply_lyrics_to_part",
+    "apply_lyrics_to_score",
+    "is_singable",
+    "singable_notes",
+]
