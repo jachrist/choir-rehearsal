@@ -15,6 +15,9 @@ dependencies = [
     "lxml>=5.0",
 ]
 
+[project.scripts]
+choir-omr = "choir_rehearsal.cli:main"
+
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
@@ -23,8 +26,10 @@ dev = [
 ]
 # Fase 1: OMR-motor. Installeres separat pga. størrelse (torch m.m.).
 #   pip install -e ".[omr]"
+# Merk: på Debian-baserte miljøer kan antlr4-python3-runtime feile å bygge;
+# sett da SETUPTOOLS_USE_DISTUTILS=stdlib før installasjon.
 omr = [
-    # "homr",  # aktiveres i Fase 1
+    "homr>=0.7",
 ]
 
 [tool.setuptools.packages.find]

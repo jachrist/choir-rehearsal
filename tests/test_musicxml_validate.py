@@ -7,6 +7,9 @@ import pytest
 from choir_rehearsal.musicxml import (
     MusicXMLValidationError,
     count_measures,
+    count_notes,
+    count_parts,
+    distinct_voices,
     is_well_formed,
     parse,
 )
@@ -23,6 +26,24 @@ def test_parse_returns_root(valid_musicxml: str):
 
 def test_count_measures(valid_musicxml: str):
     assert count_measures(valid_musicxml) == 2
+
+
+def test_count_parts_and_notes(valid_musicxml: str):
+    assert count_parts(valid_musicxml) == 1
+    assert count_notes(valid_musicxml) == 2
+
+
+def test_distinct_voices():
+    xml = (
+        "<score-partwise><part id='P1'><measure number='1'>"
+        "<note><voice>1</voice></note><note><voice>2</voice></note>"
+        "<note><voice>1</voice></note></measure></part></score-partwise>"
+    )
+    assert distinct_voices(xml) == 2
+
+
+def test_distinct_voices_none_when_absent(valid_musicxml: str):
+    assert distinct_voices(valid_musicxml) == 0
 
 
 def test_malformed_xml_is_not_well_formed():

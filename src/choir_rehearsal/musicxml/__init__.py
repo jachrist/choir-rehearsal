@@ -3,6 +3,9 @@
 from choir_rehearsal.musicxml.validate import (
     MusicXMLValidationError,
     count_measures,
+    count_notes,
+    count_parts,
+    distinct_voices,
     is_well_formed,
     parse,
 )
@@ -10,6 +13,9 @@ from choir_rehearsal.musicxml.validate import (
 __all__ = [
     "MusicXMLValidationError",
     "count_measures",
+    "count_notes",
+    "count_parts",
+    "distinct_voices",
     "is_well_formed",
     "parse",
 ]

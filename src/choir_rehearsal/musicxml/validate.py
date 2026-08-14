@@ -70,3 +70,26 @@ def count_measures(source: str | bytes | Path) -> int:
     """
     root = parse(source)
     return len(root.findall(".//measure"))
+
+
+def count_parts(source: str | bytes | Path) -> int:
+    """Tell antall ``<score-part>`` i part-listen (én per stavesystem/stemmegruppe)."""
+    root = parse(source)
+    return len(root.findall(".//part-list/score-part"))
+
+
+def count_notes(source: str | bytes | Path) -> int:
+    """Tell antall ``<note>``-elementer (inkl. pauser noteres som <note><rest/></note>)."""
+    root = parse(source)
+    return len(root.findall(".//note"))
+
+
+def distinct_voices(source: str | bytes | Path) -> int:
+    """Tell antall distinkte ``<voice>``-verdier.
+
+    Signal for divisi/lukket partitur: to stemmer på én notelinje gir to voices.
+    Flere voices enn parts tyder på delte stemmer – relevant å kontrollere i Fase 1.
+    """
+    root = parse(source)
+    voices = {el.text for el in root.findall(".//note/voice") if el.text}
+    return len(voices)
