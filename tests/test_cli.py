@@ -55,3 +55,21 @@ def test_parse_pages():
     assert cli._parse_pages(None) is None
     assert cli._parse_pages("") is None
     assert cli._parse_pages("0,2,5") == [0, 2, 5]
+
+
+def test_fase2_missing_dir_returns_2(capsys):
+    rc = cli.main(["fase2", "finnes-ikke-mappe/"])
+    assert rc == 2
+    assert "Finner ikke mappe" in capsys.readouterr().err
+
+
+def test_fase2_happy_path(tmp_path: Path, capsys):
+    from tests.test_merge import page
+
+    for i, xml in enumerate([page(4, 2), page(4, 2)]):
+        (tmp_path / f"side-{i:03d}.musicxml").write_text(xml, encoding="utf-8")
+    out = tmp_path / "merged.musicxml"
+    rc = cli.main(["fase2", str(tmp_path), "--out", str(out)])
+    assert rc == 0
+    assert out.exists()
+    assert "Sammenslått" in capsys.readouterr().out

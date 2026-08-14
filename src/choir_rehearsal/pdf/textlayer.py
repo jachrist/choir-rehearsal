@@ -12,7 +12,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-import fitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF (fitz er det gamle modulnavnet)
 
 from choir_rehearsal.config import TEXT_LAYER_MIN_CHARS
 

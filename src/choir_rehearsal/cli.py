@@ -5,6 +5,11 @@ Fase 1:
 
 Kjører PDF → bilde → homr → rå MusicXML og skriver en kvalitetsrapport til
 terminalen. Krever at homr er installert (``pip install -e '.[omr]'``).
+
+Fase 2:
+    choir-omr fase2 output/noter/ --out output/noter_merged.musicxml [--pages 0,1]
+
+Slår sammen per-side MusicXML i en mappe til ett sammenhengende partitur.
 """
 
 from __future__ import annotations
@@ -16,6 +21,7 @@ from pathlib import Path
 from choir_rehearsal.config import DEFAULT_DPI
 from choir_rehearsal.omr import homr_available
 from choir_rehearsal.pipeline import format_report, process_pdf
+from choir_rehearsal.pipeline import phase2 as _phase2
 
 
 def _parse_pages(value: str | None) -> list[int] | None:
@@ -47,6 +53,17 @@ def _cmd_fase1(args: argparse.Namespace) -> int:
     return 0 if result.ok_pages > 0 else 1
 
 
+def _cmd_fase2(args: argparse.Namespace) -> int:
+    directory = Path(args.directory)
+    if not directory.is_dir():
+        print(f"Finner ikke mappe: {directory}", file=sys.stderr)
+        return 2
+    out = Path(args.out) if args.out else directory / "merged.musicxml"
+    result = _phase2.merge_folder(directory, out, pages=_parse_pages(args.pages))
+    print(_phase2.format_report(result))
+    return 0 if result.merged_path is not None else 1
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="choir-omr",
@@ -73,6 +90,20 @@ def build_parser() -> argparse.ArgumentParser:
         help="Kommaseparerte 0-indekserte sider, f.eks. 0,1 (default: alle)",
     )
     p1.set_defaults(func=_cmd_fase1)
+
+    p2 = sub.add_parser("fase2", help="Slå sammen per-side MusicXML til ett partitur")
+    p2.add_argument("directory", help="Mappe med per-side .musicxml (f.eks. output/noter/)")
+    p2.add_argument(
+        "--out",
+        default=None,
+        help="Sti til sammenslått fil (default: <mappe>/merged.musicxml)",
+    )
+    p2.add_argument(
+        "--pages",
+        default=None,
+        help="Kommaseparerte 0-indekserte sider å slå sammen (må ha lik struktur)",
+    )
+    p2.set_defaults(func=_cmd_fase2)
     return parser
 
 

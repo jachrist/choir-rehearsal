@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-import fitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF (fitz er det gamle modulnavnet)
 import pytest
 
 
