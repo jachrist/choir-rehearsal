@@ -26,6 +26,14 @@ _SPACED_HYPHEN = re.compile("\\s*[-\u2010\u2011\u2212]\\s*")
 _LOOSE_HYPHEN = re.compile("(^|\\s)[-\u2010\u2011\u2212](\\s|$)")
 _MULTISPACE = re.compile("\\s+")
 
+# Seksjons-/strukturord som opptrer i partituret, men ikke er sangtekst. De kan
+# vaere limt sammen med teksten (f.eks. "KorVers2KorEn"), saa vi krever ikke
+# ordgrense etter ordet. Store forbokstaver holder det unna vanlige tekstord.
+DEFAULT_SECTION_LABELS = (
+    "Vers", "Kor", "Bridge", "Refreng", "Refr", "Coda", "Intro", "Outro", "Verse", "Chorus",
+)
+_SECTION_RE = re.compile("(" + "|".join(DEFAULT_SECTION_LABELS) + r")\s*\d*")
+
 
 def strip_music_glyphs(text: str) -> str:
     """Fjern glyffer fra Unicodes private bruksomraade (musikkfont-tegn)."""
@@ -45,6 +53,15 @@ def strip_melisma_extenders(text: str) -> str:
 def join_syllable_hyphens(text: str) -> str:
     """Gjoer "al - dri" om til "al-dri" saa stavelsesdeling bevares."""
     return _SPACED_HYPHEN.sub("-", text)
+
+
+def strip_section_labels(text: str) -> str:
+    """Fjern seksjons-/strukturord (Vers, Kor, Bridge, Refreng ...) inkl. tall.
+
+    Fjerner ordene selv naar de er limt sammen med teksten ("KorVers2KorEn"
+    → " En"). Store forbokstaver gjoer at vanlige tekstord ikke rammes.
+    """
+    return _MULTISPACE.sub(" ", _SECTION_RE.sub(" ", text)).strip()
 
 
 def clean_lyric_text(raw: str) -> str:

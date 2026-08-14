@@ -20,6 +20,7 @@ import re
 from dataclasses import dataclass, field
 from statistics import median
 
+from choir_rehearsal.lyrics.clean import clean_lyric_text, strip_section_labels
 from choir_rehearsal.pdf.textlayer import TextSpan
 
 # Stemme-etikett i starten av en sangtekstlinje, f.eks. "S.", "A.T.", "2S.11".
@@ -58,6 +59,49 @@ def parse_voice_label(text: str) -> tuple[list[str], str]:
         return [], text.strip()
     letters = [c for c in m.group(1) if c in "SATB"]
     return letters, text[m.end():].strip()
+
+
+def dedup_doubled_tokens(tokens: list[str]) -> list[str]:
+    """Hvis en linje er nøyaktig doblet (A A), behold bare den ene halvdelen.
+
+    Enkelte delte staver/tekstlag gir samme sangtekstlinje to ganger etter
+    hverandre. Dette fjerner den åpenbare doblingen uten å røre reell gjentakelse
+    med varierende tekst.
+    """
+    n = len(tokens)
+    if n >= 4 and n % 2 == 0 and tokens[: n // 2] == tokens[n // 2 :]:
+        return tokens[: n // 2]
+    return tokens
+
+
+def assemble_voice_lyrics(
+    lines: list[TextLine],
+    *,
+    section_filter: bool = True,
+    dedup: bool = True,
+) -> dict[str, str]:
+    """Sett sammen sangtekst per stemme fra grupperte tekstlinjer.
+
+    For hver linje: rens teksten, fjern seksjonsord, skill ut stemme-etikett, og
+    føy resten til hver stemme etiketten peker på (``A.T.`` → både A og T).
+    Returnerer f.eks. ``{"S": "Enn om det al-dri ...", "A": "..."}``.
+    """
+    collected: dict[str, list[str]] = {}
+    for line in lines:
+        text = clean_lyric_text(line.text)
+        if section_filter:
+            text = strip_section_labels(text)
+        voices, rest = parse_voice_label(text)
+        rest = rest.strip()
+        if not voices or not rest:
+            continue
+        tokens = rest.split()
+        if dedup:
+            tokens = dedup_doubled_tokens(tokens)
+        joined = " ".join(tokens)
+        for v in voices:
+            collected.setdefault(v, []).append(joined)
+    return {v: " ".join(parts) for v, parts in collected.items()}
 
 
 def _height(span: TextSpan) -> float:

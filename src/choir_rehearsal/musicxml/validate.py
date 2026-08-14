@@ -39,6 +39,15 @@ def parse(source: str | bytes | Path) -> etree._Element:
     Raises:
         MusicXMLValidationError: Ved ugyldig XML eller feil rot-element.
     """
+    # Allerede parset element: returner som det er (idempotent).
+    if isinstance(source, etree._Element):
+        tag = etree.QName(source).localname
+        if tag not in _MUSICXML_ROOTS:
+            raise MusicXMLValidationError(
+                f"Rot-element er <{tag}>, forventet et av {sorted(_MUSICXML_ROOTS)}"
+            )
+        return source
+
     raw = _to_bytes(source)
     try:
         root = etree.fromstring(raw)
