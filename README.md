@@ -37,6 +37,13 @@ python3 -m pip install -e ".[ui]"
 
 ## Bruk
 
+Kommandoen heter `choir-omr`. Ligger den ikke på PATH (vanlig med Microsoft
+Store-Python på Windows), kjør den som modul i stedet – helt likeverdig:
+
+```bash
+python -m choir_rehearsal <kommando> ...      # f.eks. python -m choir_rehearsal ui "partitur.musicxml"
+```
+
 ### Fase 1 – PDF → rå MusicXML
 
 ```bash
