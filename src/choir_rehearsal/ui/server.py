@@ -13,9 +13,11 @@ Alt kjører lokalt; ingenting sendes ut av maskinen.
 
 from __future__ import annotations
 
+import io
+import zipfile
 from pathlib import Path
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, PlainTextResponse, Response
 from lxml import etree
 from pydantic import BaseModel
@@ -50,6 +52,35 @@ def _render_svg(root: etree._Element) -> str:
     tk.loadData(etree.tostring(root).decode("utf-8"))
     pages = tk.getPageCount() or 1
     return "\n".join(tk.renderToSVG(p) for p in range(1, pages + 1))
+
+
+def _bytes_to_musicxml(content: bytes, filename: str = "") -> etree._Element:
+    """Parse MusicXML fra bytes. Håndterer komprimert .mxl (zip)."""
+    if filename.lower().endswith(".mxl") or content[:2] == b"PK":
+        with zipfile.ZipFile(io.BytesIO(content)) as zf:
+            inner = None
+            # META-INF/container.xml peker på hovedfila; ellers ta første *.xml.
+            try:
+                container = zf.read("META-INF/container.xml")
+                croot = etree.fromstring(container)
+                rf = croot.find(".//{*}rootfile")
+                if rf is not None:
+                    inner = rf.get("full-path")
+            except KeyError:
+                inner = None
+            if inner is None:
+                names = [
+                    n for n in zf.namelist()
+                    if n.lower().endswith((".xml", ".musicxml")) and not n.startswith("META-INF")
+                ]
+                if not names:
+                    raise HTTPException(status_code=400, detail="Fant ingen MusicXML i .mxl-fila")
+                inner = names[0]
+            content = zf.read(inner)
+    try:
+        return musicxml.parse(content)
+    except musicxml.MusicXMLValidationError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
 
 
 def _state(root: etree._Element) -> dict:
@@ -93,6 +124,20 @@ def create_app() -> FastAPI:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         app.state.source = path
         return {"loaded": str(path), **_state(app.state.root)}
+
+    @app.post("/api/upload")
+    async def upload(file: UploadFile = File(...)) -> dict:
+        content = await file.read()
+        app.state.root = _bytes_to_musicxml(content, file.filename or "")
+        app.state.source = Path(file.filename or "opplastet.musicxml")
+        return {"loaded": file.filename, **_state(app.state.root)}
+
+    @app.post("/api/demo")
+    def demo() -> dict:
+        content = (_STATIC / "demo.musicxml").read_bytes()
+        app.state.root = _bytes_to_musicxml(content, "demo.musicxml")
+        app.state.source = Path("demo.musicxml")
+        return {"loaded": "demo.musicxml", **_state(app.state.root)}
 
     @app.get("/api/state")
     def state() -> dict:

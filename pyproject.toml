@@ -37,6 +37,7 @@ ui = [
     "fastapi>=0.110",
     "uvicorn>=0.29",
     "verovio>=4.0",
+    "python-multipart>=0.0.9",
 ]
 
 [tool.setuptools.packages.find]
@@ -60,3 +61,7 @@ src = ["src", "tests"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.flake8-bugbear]
+# FastAPI-idiomer der «kall i default» er tilsiktet.
+extend-immutable-calls = ["fastapi.File", "fastapi.Depends", "fastapi.Query", "fastapi.Form"]

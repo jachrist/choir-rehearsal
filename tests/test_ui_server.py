@@ -99,6 +99,51 @@ def test_edit_unknown_part_400(client):
     assert r.status_code == 400
 
 
+def test_upload_musicxml(client):
+    c, _ = client
+    r = c.post(
+        "/api/upload",
+        files={"file": ("score.musicxml", SCORE.encode("utf-8"), "application/xml")},
+    )
+    assert r.status_code == 200
+    assert [v["name"] for v in r.json()["voices"]] == ["Soprano", "Alto"]
+
+
+def test_upload_invalid_400(client):
+    c, _ = client
+    r = c.post(
+        "/api/upload",
+        files={"file": ("bad.musicxml", b"<html></html>", "application/xml")},
+    )
+    assert r.status_code == 400
+
+
+def test_demo_loads(client):
+    c, _ = client
+    r = c.post("/api/demo")
+    assert r.status_code == 200
+    names = [v["name"] for v in r.json()["voices"]]
+    assert names == ["Soprano", "Alto", "Tenor", "Bass"]
+    # demoen har sangtekst på sopranen
+    assert r.json()["voices"][0]["lyric_count"] > 0
+
+
+def test_upload_mxl_zip(client):
+    c, _ = client
+    import io
+    import zipfile
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w") as zf:
+        zf.writestr("score.musicxml", SCORE)
+    r = c.post(
+        "/api/upload",
+        files={"file": ("score.mxl", buf.getvalue(), "application/vnd.recordare.musicxml")},
+    )
+    assert r.status_code == 200
+    assert len(r.json()["voices"]) == 2
+
+
 def test_export_returns_musicxml(client):
     c, tmp = client
     _load(c, tmp)

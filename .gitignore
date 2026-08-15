@@ -34,3 +34,5 @@ output/
 *.pdf
 *.musicxml
 *.mxl
+# Unntak: den innebygde (egen-lagde) demofila i web-verktøyet skal med.
+!src/choir_rehearsal/ui/static/demo.musicxml

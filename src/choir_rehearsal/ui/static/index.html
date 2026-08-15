@@ -32,9 +32,16 @@
 <body>
   <header>
     <h1>🎼 Sangtekstretting</h1>
-    <input id="path" type="text" placeholder="sti til .musicxml (rettet i MuseScore)" />
-    <button class="primary" onclick="load()">Last inn</button>
+    <input id="file" type="file" accept=".musicxml,.xml,.mxl" onchange="uploadFile()" />
+    <button onclick="loadDemo()">Prøv demo</button>
     <button onclick="location.href='/api/export'">Eksporter</button>
+    <details style="margin-left:6px">
+      <summary class="hint" style="cursor:pointer">…eller sti på maskinen</summary>
+      <div class="row" style="margin-top:6px">
+        <input id="path" type="text" placeholder="C:\sti\til\partitur.musicxml" />
+        <button class="primary" onclick="load()">Last inn sti</button>
+      </div>
+    </details>
     <span class="status" id="status"></span>
   </header>
   <div class="layout">
@@ -52,15 +59,38 @@ async function api(url, opts){
   return r;
 }
 
+async function showLoaded(data){
+  renderVoices(data.voices);
+  await refreshScore();
+  setStatus("Lastet: " + (data.loaded || ""));
+}
+
+async function uploadFile(){
+  const f = $("file").files[0];
+  if(!f) return;
+  try{
+    setStatus("Laster opp …");
+    const fd = new FormData(); fd.append("file", f);
+    const data = await (await api("/api/upload",{method:"POST",body:fd})).json();
+    await showLoaded(data);
+  }catch(e){ setStatus("Feil: " + e.message); }
+}
+
+async function loadDemo(){
+  try{
+    setStatus("Laster demo …");
+    const data = await (await api("/api/demo",{method:"POST"})).json();
+    await showLoaded(data);
+  }catch(e){ setStatus("Feil: " + e.message); }
+}
+
 async function load(){
   const path = $("path").value.trim();
   if(!path){ setStatus("Skriv inn en filsti."); return; }
   try{
     setStatus("Laster …");
     const data = await (await api("/api/load",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({path})})).json();
-    renderVoices(data.voices);
-    await refreshScore();
-    setStatus("Lastet: " + data.loaded);
+    await showLoaded(data);
   }catch(e){ setStatus("Feil: " + e.message); }
 }
 
